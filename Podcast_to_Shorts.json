@@ -1,0 +1,380 @@
+{
+  "name": "Podcast to Shorts",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        400,
+        160
+      ],
+      "id": "430baf64-2754-4096-bac5-0e9909d3760c",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "videos",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1080,
+        360
+      ],
+      "id": "f45a9234-d073-4c26-9f37-01c133c8715d",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "url": "=https://elb-api.vizard.ai/hvizard-server-front/open-api/v1/project/query/{{$json.projectId}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "VIZARDAI_API_KEY",
+              "value": "db94acded4df4566be07c93d324f444b"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        740,
+        360
+      ],
+      "id": "4eec2606-f0d6-4663-bd90-698b000e1a52",
+      "name": "Retrieve Vizard Project"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://elb-api.vizard.ai/hvizard-server-front/open-api/v1/project/create",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "VIZARDAI_API_KEY",
+              "value": "db94acded4df4566be07c93d324f444b"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"lang\": \"en\",\n  \"preferLength\": [\n    0\n  ],\n  \"videoUrl\": \"{{ $json.link }}\",\n  \"videoType\": 2\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1040,
+        160
+      ],
+      "id": "02200eaf-ae70-4e14-b3ce-ea8d61d02100",
+      "name": "Send Longform to Vizard"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        420,
+        740
+      ],
+      "id": "7801547d-4f05-4d45-a8e7-0615e0e1238b",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You're a helpful, intelligent social media assistant. You make captions for Instagram and TikTok.",
+              "role": "system"
+            },
+            {
+              "content": "Context:\nYou’ll receive a transcript. Your task is to craft engaging, high-quality captions suitable for Instagram and TikTok.\n\nInstructions:\n\nReturn the result in JSON format like this:\n{\"caption\":\"\"}\n\nLimit each caption to around 100 words.\n\nUse a spartan tone—inspired by classic Western grit—while still feeling natural for social platforms.\n\nWrite in a conversational, first-person voice, as if I were speaking directly to my audience.\n\nInclude emojis sparingly—only when they add personality or clarity.\n\nEach sentence should be at least 6 words long.\n\nWrite at a University reading level—clear, mature, but not overly complex."
+            },
+            {
+              "content": "={{ $json.transcript }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        620,
+        760
+      ],
+      "id": "aa2bbf2d-055d-456c-8395-b5c378afbced",
+      "name": "OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "IFuS0OMBdaTai4J9",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        760
+      ],
+      "id": "e8b10bde-b287-482d-9a83-6e5ac7bbf41f",
+      "name": "Wait",
+      "webhookId": "1d588357-cb88-42b5-b34f-ed3c767dbf04"
+    },
+    {
+      "parameters": {
+        "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCbo-KbSjJDG6JWQ_MTZ_rNA",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.1,
+      "position": [
+        620,
+        160
+      ],
+      "id": "df1de92e-6905-450a-8385-01a17c2c9ac1",
+      "name": "RSS Read"
+    },
+    {
+      "parameters": {
+        "maxItems": 2
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        820,
+        160
+      ],
+      "id": "a11b167c-ff0e-4289-ad99-3cb3dcf7552b",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "d40c9293-818e-49c9-bcff-a864bd524427",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        400,
+        360
+      ],
+      "id": "e3e22d50-6094-4917-b228-25d474768529",
+      "name": "Webhook",
+      "webhookId": "d40c9293-818e-49c9-bcff-a864bd524427"
+    },
+    {
+      "parameters": {
+        "sendTo": "info@suneelp.com",
+        "subject": "Your clips are ready!",
+        "emailType": "text",
+        "message": "=Hi Suneel,\n\nYour clips are ready!\nYou can check everything in the spreadsheet below:\n{Link to Google Sheet}\n\nLet me know if you'd like any changes.\n\nThanks,",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        640,
+        560
+      ],
+      "id": "d4501fea-0c14-4b6c-b473-fbe2ddb27438",
+      "name": "Gmail",
+      "webhookId": "1090375c-2e63-47d6-9b18-f82ee339351b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "HwIjKCniygOjVZuR",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        940,
+        760
+      ],
+      "id": "9b8e36e2-e788-42bd-905a-8a7b0e030c8b",
+      "name": "Google Sheets",
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "retryOnFail": false,
+      "notesInFlow": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "zgw1IrEsT6CSl51u",
+          "name": "Google Sheets account 3"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "RSS Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retrieve Vizard Project": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Read": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Send Longform to Vizard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Retrieve Vizard Project",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "8b07550d-69bc-4266-8de7-86e19e5061d1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4275106c8fd02c2533edab3f7741b7db420af0691c825fa5d46bbabd00ca51b7"
+  },
+  "id": "3luvN842xKKiZHbA",
+  "tags": []
+}
